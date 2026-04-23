@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cricket Scorer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="header">
+        <h1>Cricket Scoring App</h1>
+        <p>Fast, ball-by-ball scoring with undo and match persistence.</p>
+      </header>
+
+      <section class="card" id="savedMatchesCard">
+        <div class="saved-matches-header">
+          <h2>Saved Matches</h2>
+          <div class="saved-actions">
+            <button type="button" class="btn" id="editMatchesBtn">Edit</button>
+            <button type="button" class="btn" id="newMatchBtn">New Match</button>
+          </div>
+        </div>
+        <div id="savedMatchesTabs" class="saved-tabs"></div>
+      </section>
+
+      <section class="card" id="cloudSyncCard">
+        <h2>Cloud Sync (Supabase)</h2>
+        <div class="sync-grid">
+          <label>
+            Supabase URL
+            <input type="url" id="syncUrl" placeholder="https://your-project.supabase.co" />
+          </label>
+          <label>
+            Supabase Anon Key
+            <input type="password" id="syncAnonKey" placeholder="Paste anon key" />
+          </label>
+          <label>
+            Sync Space
+            <input type="text" id="syncSpace" placeholder="e.g. showri-cricket" />
+          </label>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-primary" id="connectSyncBtn">Connect Sync</button>
+          <button type="button" class="btn" id="pullSyncBtn">Pull Latest</button>
+          <button type="button" class="btn" id="disconnectSyncBtn">Disconnect</button>
+        </div>
+        <p id="syncStatus" class="inline-hint">Cloud sync is off. Connect Supabase to sync across browsers/devices.</p>
+      </section>
+
+      <section class="card" id="setupCard">
+        <h2>Match Setup</h2>
+        <form id="setupForm" class="setup-grid">
+          <label>
+            Match Type
+            <select id="matchType" required>
+              <option value="one-match">One Match</option>
+              <option value="tournament">Tournament</option>
+            </select>
+          </label>
+          <label>
+            <span id="nameFieldLabel">Tournament Name</span>
+            <input type="text" id="tournamentName" placeholder="e.g. Summer Cup 2026" required />
+          </label>
+          <label>
+            Team 1 Name
+            <input type="text" id="teamOneName" value="Team A" required />
+          </label>
+          <label>
+            Team 2 Name
+            <input type="text" id="teamTwoName" value="Team B" required />
+          </label>
+          <label>
+            Team 1 Players (comma-separated)
+            <input
+              type="text"
+              id="teamOnePlayers"
+              value="A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11"
+              required
+            />
+          </label>
+          <label>
+            Team 2 Players (comma-separated)
+            <input
+              type="text"
+              id="teamTwoPlayers"
+              value="B1, B2, B3, B4, B5, B6, B7, B8, B9, B10, B11"
+              required
+            />
+          </label>
+          <label>
+            Overs
+            <input type="number" id="overs" min="1" max="100" value="20" required />
+          </label>
+          <label>
+            Wickets In Innings
+            <input type="number" id="wicketsLimit" min="1" max="10" value="10" required />
+          </label>
+          <label>
+            Target Runs (optional)
+            <input type="number" id="targetRuns" min="1" placeholder="e.g. 154" />
+          </label>
+          <label>
+            Toss Winner
+            <select id="tossWinner" required></select>
+          </label>
+          <label>
+            Toss Decision
+            <select id="tossDecision" required>
+              <option value="bat">Batting</option>
+              <option value="bowl">Bowling</option>
+            </select>
+          </label>
+          <label>
+            Striker (from batting team players)
+            <select id="strikerName" required></select>
+          </label>
+          <label>
+            Non-Striker (from batting team players)
+            <select id="nonStrikerName" required></select>
+          </label>
+          <label>
+            Bowler (from bowling team players)
+            <select id="bowlerName" required></select>
+          </label>
+          <p id="inningsPreview" class="inline-hint"></p>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Start / Restart Match</button>
+            <button type="button" id="resumeSaved" class="btn">Resume Saved Match</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card scoreboard" id="scoreboardCard">
+        <div class="score-row">
+          <div>
+            <h2 id="matchTitle">Not started</h2>
+            <p id="inningsState">Create a match to begin scoring.</p>
+          </div>
+          <div class="main-score" id="mainScore">0/0</div>
+        </div>
+        <div class="meta-grid">
+          <div>
+            <span class="label">Overs</span>
+            <strong id="oversDisplay">0.0</strong>
+          </div>
+          <div>
+            <span class="label">Run Rate</span>
+            <strong id="runRate">0.00</strong>
+          </div>
+          <div>
+            <span class="label">Extras</span>
+            <strong id="extrasDisplay">0</strong>
+          </div>
+          <div>
+            <span class="label">Required</span>
+            <strong id="requiredDisplay">-</strong>
+          </div>
+        </div>
+
+        <div class="players-grid">
+          <div>
+            <span class="label">Striker</span>
+            <strong id="strikerDisplay">-</strong>
+          </div>
+          <div>
+            <span class="label">Non-Striker</span>
+            <strong id="nonStrikerDisplay">-</strong>
+          </div>
+          <div>
+            <span class="label">Bowler</span>
+            <strong id="bowlerDisplay">-</strong>
+          </div>
+          <div>
+            <span class="label">This Over</span>
+            <strong id="thisOver">-</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="card controls" id="controlsCard">
+        <h2>Scoring Controls</h2>
+
+        <div class="control-block">
+          <h3>Runs Off Bat (legal ball)</h3>
+          <div class="button-row" id="runButtons">
+            <button type="button" class="btn scoring" data-action="runs" data-runs="0">0</button>
+            <button type="button" class="btn scoring" data-action="runs" data-runs="1">1</button>
+            <button type="button" class="btn scoring" data-action="runs" data-runs="2">2</button>
+            <button type="button" class="btn scoring" data-action="runs" data-runs="3">3</button>
+            <button type="button" class="btn scoring" data-action="runs" data-runs="4">4</button>
+            <button type="button" class="btn scoring" data-action="runs" data-runs="5">5</button>
+            <button type="button" class="btn scoring" data-action="runs" data-runs="6">6</button>
+          </div>
+        </div>
+
+        <div class="control-block extras-grid">
+          <div>
+            <h3>Illegal Deliveries</h3>
+            <div class="button-col">
+              <button type="button" class="btn scoring" data-action="wide">Wide (+1)</button>
+              <button type="button" class="btn scoring" data-action="noball">No Ball (+1)</button>
+            </div>
+          </div>
+
+          <div>
+            <h3>Byes / Leg Byes (legal ball)</h3>
+            <label>
+              Runs
+              <select id="byeRuns">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+              </select>
+            </label>
+            <div class="button-col">
+              <button type="button" class="btn scoring" data-action="bye">Bye</button>
+              <button type="button" class="btn scoring" data-action="legbye">Leg Bye</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="control-block actions-grid">
+          <div>
+            <h3>Wicket</h3>
+            <label>
+              Next Batter
+              <select id="nextBatter"></select>
+            </label>
+            <button type="button" class="btn scoring danger" data-action="wicket">Wicket</button>
+          </div>
+
+          <div>
+            <h3>Utility</h3>
+            <label>
+              New Bowler
+              <select id="bowlerInput"></select>
+            </label>
+            <div class="button-col">
+              <button type="button" class="btn" id="setBowler">Set Bowler</button>
+              <button type="button" class="btn" id="swapBatters">Swap Batters</button>
+              <button type="button" class="btn" id="undoBtn">Undo Last Ball</button>
+              <button type="button" class="btn" id="endInningsBtn">End Innings</button>
+              <button type="button" class="btn" id="saveMatchBtn">Save Match</button>
+              <button type="button" class="btn" id="clearSavedBtn">Clear Saved Match</button>
+            </div>
+            <p id="saveStatus" class="inline-hint">Auto-save is on.</p>
+
+            <div class="edit-ball-panel">
+              <h4>Edit Previous Ball</h4>
+              <p id="previousBallInfo" class="inline-hint">No ball recorded yet.</p>
+              <label>
+                New Result
+                <select id="editBallType">
+                  <option value="runs">Runs</option>
+                  <option value="wide">Wide</option>
+                  <option value="noball">No Ball</option>
+                  <option value="bye">Bye</option>
+                  <option value="legbye">Leg Bye</option>
+                  <option value="wicket">Wicket</option>
+                </select>
+              </label>
+              <label id="editBallRunsWrap">
+                Runs
+                <select id="editBallRuns">
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                </select>
+              </label>
+              <label id="editNextBatterWrap">
+                Next Batter (for wicket)
+                <select id="editNextBatter"></select>
+              </label>
+              <button type="button" class="btn" id="applyBallEdit">Apply Edit</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div id="bowlerModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="bowlerModalTitle">
+        <div class="modal-card">
+          <h3 id="bowlerModalTitle">Select Bowler For Next Over</h3>
+          <p id="bowlerModalInfo" class="inline-hint">Over completed.</p>
+          <label>
+            Bowler
+            <select id="overBowlerSelect"></select>
+          </label>
+          <button type="button" class="btn btn-primary" id="confirmOverBowler">Confirm Bowler</button>
+        </div>
+      </div>
+
+      <section class="card">
+        <h2>Ball Log</h2>
+        <ol id="ballLog" class="ball-log" reversed></ol>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
