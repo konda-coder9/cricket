@@ -4,13 +4,18 @@ const SYNC_SETTINGS_KEY = "cricket-scorer-sync-settings-v1";
 const MATCHES_SCHEMA_VERSION = 1;
 const CLOUD_SYNC_TABLE = "cricket_match_bundles";
 const CLOUD_SYNC_DEBOUNCE_MS = 700;
+const SUPABASE_CONFIG =
+  window.CRICKET_SUPABASE_CONFIG && typeof window.CRICKET_SUPABASE_CONFIG === "object"
+    ? window.CRICKET_SUPABASE_CONFIG
+    : {};
+const SUPABASE_URL = typeof SUPABASE_CONFIG.url === "string" ? SUPABASE_CONFIG.url.trim() : "";
+const SUPABASE_ANON_KEY =
+  typeof SUPABASE_CONFIG.anonKey === "string" ? SUPABASE_CONFIG.anonKey.trim() : "";
 
 const elements = {
   savedMatchesTabs: document.getElementById("savedMatchesTabs"),
   editMatchesBtn: document.getElementById("editMatchesBtn"),
   newMatchBtn: document.getElementById("newMatchBtn"),
-  syncUrl: document.getElementById("syncUrl"),
-  syncAnonKey: document.getElementById("syncAnonKey"),
   syncSpace: document.getElementById("syncSpace"),
   connectSyncBtn: document.getElementById("connectSyncBtn"),
   pullSyncBtn: document.getElementById("pullSyncBtn"),
@@ -191,8 +196,6 @@ function setSyncStatus(message) {
 
 function normalizeSyncSettings(settings) {
   return {
-    url: typeof settings?.url === "string" ? settings.url.trim() : "",
-    anonKey: typeof settings?.anonKey === "string" ? settings.anonKey.trim() : "",
     space: typeof settings?.space === "string" ? settings.space.trim() : ""
   };
 }
@@ -217,12 +220,6 @@ function persistSyncSettings(settings) {
 }
 
 function fillSyncInputs(settings) {
-  if (elements.syncUrl) {
-    elements.syncUrl.value = settings.url;
-  }
-  if (elements.syncAnonKey) {
-    elements.syncAnonKey.value = settings.anonKey;
-  }
   if (elements.syncSpace) {
     elements.syncSpace.value = settings.space;
   }
@@ -230,14 +227,12 @@ function fillSyncInputs(settings) {
 
 function readSyncInputs() {
   return normalizeSyncSettings({
-    url: elements.syncUrl ? elements.syncUrl.value : "",
-    anonKey: elements.syncAnonKey ? elements.syncAnonKey.value : "",
     space: elements.syncSpace ? elements.syncSpace.value : ""
   });
 }
 
 function hasCompleteSyncSettings(settings) {
-  return Boolean(settings.url && settings.anonKey && settings.space);
+  return Boolean(SUPABASE_URL && SUPABASE_ANON_KEY && settings.space);
 }
 
 function getCloudBundleId(settings = cloudSyncSettings) {
@@ -275,12 +270,6 @@ function refreshSyncControlStates() {
     elements.disconnectSyncBtn.disabled = !cloudSyncConnected;
   }
 
-  if (elements.syncUrl) {
-    elements.syncUrl.disabled = cloudSyncConnected;
-  }
-  if (elements.syncAnonKey) {
-    elements.syncAnonKey.disabled = cloudSyncConnected;
-  }
   if (elements.syncSpace) {
     elements.syncSpace.disabled = cloudSyncConnected;
   }
@@ -1524,14 +1513,20 @@ async function connectCloudSync(autoConnect = false) {
 
   const settings = readSyncInputs();
 
-  if (!hasCompleteSyncSettings(settings)) {
-    setSyncStatus("Enter Supabase URL, anon key, and sync space.");
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    setSyncStatus("Supabase URL/anon key not configured in config.js.");
+    refreshSyncControlStates();
+    return;
+  }
+
+  if (!settings.space) {
+    setSyncStatus("Enter Sync Space.");
     refreshSyncControlStates();
     return;
   }
 
   cloudSyncSettings = settings;
-  cloudSyncClient = createClient(settings.url, settings.anonKey);
+  cloudSyncClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   cloudSyncConnected = true;
   persistSyncSettings(settings);
   refreshSyncControlStates();
@@ -1605,8 +1600,13 @@ async function bootstrapCloudSync() {
   fillSyncInputs(cloudSyncSettings);
   refreshSyncControlStates();
 
-  if (!hasCompleteSyncSettings(cloudSyncSettings)) {
-    setSyncStatus("Cloud sync is off. Connect Supabase to sync across browsers/devices.");
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    setSyncStatus("Supabase URL/anon key not configured in config.js.");
+    return;
+  }
+
+  if (!cloudSyncSettings.space) {
+    setSyncStatus("Cloud sync is off. Enter Sync Space and connect.");
     return;
   }
 
@@ -1841,7 +1841,7 @@ function setupListeners() {
   elements.editMatchesBtn.addEventListener("click", toggleMatchesEditMode);
   elements.newMatchBtn.addEventListener("click", startNewMatchSession);
 
-  [elements.syncUrl, elements.syncAnonKey, elements.syncSpace].forEach((element) => {
+  [elements.syncSpace].forEach((element) => {
     if (!element) {
       return;
     }
