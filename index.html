@@ -34,14 +34,6 @@
         <h2>Cloud Sync (Supabase)</h2>
         <div class="sync-grid">
           <label>
-            Supabase URL
-            <input type="url" id="syncUrl" placeholder="https://your-project.supabase.co" />
-          </label>
-          <label>
-            Supabase Anon Key
-            <input type="password" id="syncAnonKey" placeholder="Paste anon key" />
-          </label>
-          <label>
             Sync Space
             <input type="text" id="syncSpace" placeholder="e.g. showri-cricket" />
           </label>
@@ -51,7 +43,7 @@
           <button type="button" class="btn" id="pullSyncBtn">Pull Latest</button>
           <button type="button" class="btn" id="disconnectSyncBtn">Disconnect</button>
         </div>
-        <p id="syncStatus" class="inline-hint">Cloud sync is off. Connect Supabase to sync across browsers/devices.</p>
+        <p id="syncStatus" class="inline-hint">Cloud sync is off. Enter Sync Space and connect.</p>
       </section>
 
       <section class="card" id="setupCard">
@@ -309,6 +301,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
