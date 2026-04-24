@@ -28,11 +28,10 @@ Open `http://localhost:8000`.
 3. In Supabase project settings, copy:
    - Project URL
    - `anon` public key
-4. In the app, fill **Cloud Sync (Supabase)**:
-   - `Supabase URL`
-   - `Supabase Anon Key`
+4. Put URL and anon key in `config.js`.
+5. In the app, fill **Cloud Sync (Supabase)**:
    - `Sync Space` (same value on every browser/device)
-5. Click `Connect Sync`.
+6. Click `Connect Sync`.
 
 Notes:
 - `Sync Space` is the shared key for your match bundle.

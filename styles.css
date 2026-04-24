@@ -124,8 +124,6 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
-#syncAnonKey,
-#syncUrl,
 #syncSpace {
   font-family: "IBM Plex Mono", monospace;
 }
