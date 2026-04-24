@@ -4,9 +4,6 @@
   "compatibility_date": "2026-04-24",
   "assets": {
     "directory": "."
-  }
+  },
+  "compatibility_flags": ["nodejs_compat"]
 }
-    "nodejs_compat"
-  ]
-}
->>>>>>> c64d9bb86719693c618157937130cec6dfb8a998
